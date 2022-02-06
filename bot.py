@@ -3,6 +3,7 @@ import requests
 import dotenv
 import telebot
 import time
+import threading
 from telebot import types
 
 dotenv.load_dotenv()
@@ -52,41 +53,105 @@ TELEGRAM_API_KEY = os.getenv('TELEGRAM_API_KEY')
 bot = telebot.TeleBot(TELEGRAM_API_KEY)
 
 
-last_welcome: types.Message = None
-last_welcome_user_id: int = 0
-last_welcome_time: int = 0
+class SyncMap:
+    def __init__(self):
+        self.mapp = {}
+        self.lock = threading.Lock()
+
+    def get(self, key):
+        self.lock.acquire()
+        if key in self.mapp:
+            self.lock.release()
+            return self.mapp[key]
+        self.lock.release()
+        return None
+
+    def set(self, key, value):
+        self.lock.acquire()
+        self.mapp[key] = value
+        self.lock.release()
+
+    def remove(self, key):
+        self.lock.acquire()
+        if key in self.mapp:
+            del self.mapp[key]
+        self.lock.release()
+
+
+unverified = SyncMap()
 
 
 @bot.message_handler(func=lambda m: True, content_types=['new_chat_members'])
 def on_user_joins(message):
-    global last_welcome, last_welcome_user_id, last_welcome_time
+    global unverified
     try:
-        if message.json["new_chat_member"]["is_bot"]:
-            bot.reply_to(message, messages["bot_love"])
-            return
-
         markup = types.InlineKeyboardMarkup()
         verify = types.InlineKeyboardButton(
-            text='Verify Human', callback_data='verify')
+            text='Verify Human', callback_data=message.json["new_chat_member"]["id"])
         markup.add(verify)
         msg = bot.reply_to(message, messages['welcome'],
                            parse_mode="html", disable_web_page_preview=True, reply_markup=markup)
-        if last_welcome:
-            bot.delete_message(last_welcome.chat.id, last_welcome.id)
-        last_welcome = msg
-        last_welcome_user_id = message.json["new_chat_member"]["id"]
-        last_welcome_time = time.time()
-    except:
-        pass
+        unverified.set(message.json["new_chat_member"]["id"], {
+            "time": time.time(),
+            "message": msg,
+            "user": message.json["new_chat_member"],
+        })
+    except Exception as e:
+        print(e)
 
 
 @bot.callback_query_handler(func=None)
 def welcome_callback(call: types.CallbackQuery):
     try:
-        bot.delete_message(last_welcome.chat.id, last_welcome.id)
-    except:
-        pass
+        key = call.from_user.id
+        msg = unverified.get(key)["message"]
+        verified = bot.delete_message(msg.chat.id, msg.id)
+        if verified:
+            unverified.remove(key)
+    except Exception as e:
+        print(e)
     bot.answer_callback_query(callback_query_id=call.id, show_alert=False)
+
+
+# cron for minute wise checkup
+def remove_unverified():
+    while True:
+        now = time.time()
+
+        unverified.lock.acquire()
+        keys = list(unverified.mapp.keys())
+        unverified.lock.release()
+        for key in keys:
+            data = unverified.get(key)
+            # 1 min older
+            if data["time"] + 60 < now:
+                # unverfied user
+                # 1. delete message
+                msg = data["message"]
+                usr = data["user"]
+                try:
+                    bot.delete_message(msg.chat.id, msg.id)
+                except Exception as e:
+                    print(e)
+                # 2. send user is being removed
+                try:
+                    name = usr["first_name"]
+                    bot.send_message(
+                        msg.chat.id, f"Banning {name}: verification failed")
+                except Exception as e:
+                    print(e)
+                # 3. ban user
+                try:
+                    bot.ban_chat_member(msg.chat.id, usr["id"])
+                except Exception as e:
+                    bot.send_message(
+                        msg.chat.id, "Could not ban member: insufficient priviledges")
+                    print(e)
+                
+                # remove key regardless
+                unverified.remove(key)
+
+        time.sleep(60)
 
 
 @bot.message_handler(commands=["start", "hello"])
@@ -101,8 +166,9 @@ def price(message):
         price = round(res.json()["price"], 4)
         bot.send_message(
             message.chat.id, f"$ERGOPAD trading at ${price} USD")
-    except:
+    except Exception as e:
         bot.reply_to(message, "Sorry cannot get price data from ergopad api.")
+        print(e)
 
 
 @bot.message_handler(commands=["faq"])
@@ -133,5 +199,10 @@ def listener(messages):
         print(str(m))
 
 
+t = threading.Thread(target=remove_unverified)
+t.start()
+
 bot.set_update_listener(listener)
 bot.polling()
+
+t.join()
