@@ -147,7 +147,7 @@ unverified = SyncMap()
 #                     bot.send_message(
 #                         msg.chat.id, "Could not ban member: insufficient priviledges")
 #                     print(e)
-                
+
 #                 # remove key regardless
 #                 unverified.remove(key)
 
@@ -159,13 +159,21 @@ def greet(message):
     bot.reply_to(message, messages["hello"])
 
 
+price_last_timestamps = {}
+
+
 @bot.message_handler(commands=["price"])
 def price(message):
     try:
+        bot.delete_message(message.chat.id, message.id)
+        # 30 min cooldown
+        if message.chat.id in price_last_timestamps and price_last_timestamps[message.chat.id] + 1800 > time.time():
+            return
         res = requests.get(f"{API}/asset/price/ergopad", verify=False)
         price = round(res.json()["price"], 4)
         bot.send_message(
             message.chat.id, f"$ERGOPAD trading at ${price} USD")
+        price_last_timestamps[message.chat.id] = time.time()
     except Exception as e:
         bot.reply_to(message, "Sorry cannot get price data from ergopad api.")
         print(e)
