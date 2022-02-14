@@ -15,7 +15,7 @@ You can read the FAQ <a href=\"https://ergopad.io/faq\">here</a> ❓
 """,
     "report": """
 Please be aware that we will never ask for private keys over DM.
-Report any suspicious activity to an admin. If you need assistance, we are able to help by checking your public key.
+Report any suspicious activity to an admin. If you need assistance, we are able to help by checking your public wallet address.
 Keep your private keys private and never share them with anyone 🚨
 """,
     "refund": """
