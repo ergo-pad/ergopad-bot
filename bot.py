@@ -81,77 +81,77 @@ class SyncMap:
 unverified = SyncMap()
 
 
-@bot.message_handler(func=lambda m: True, content_types=['new_chat_members'])
-def on_user_joins(message):
-    global unverified
-    try:
-        markup = types.InlineKeyboardMarkup()
-        verify = types.InlineKeyboardButton(
-            text='Verify Human', callback_data=message.json["new_chat_member"]["id"])
-        markup.add(verify)
-        msg = bot.reply_to(message, messages['welcome'],
-                           parse_mode="html", disable_web_page_preview=True, reply_markup=markup)
-        unverified.set(message.json["new_chat_member"]["id"], {
-            "time": time.time(),
-            "message": msg,
-            "user": message.json["new_chat_member"],
-        })
-    except Exception as e:
-        print(e)
+# @bot.message_handler(func=lambda m: True, content_types=['new_chat_members'])
+# def on_user_joins(message):
+#     global unverified
+#     try:
+#         markup = types.InlineKeyboardMarkup()
+#         verify = types.InlineKeyboardButton(
+#             text='Verify Human', callback_data=message.json["new_chat_member"]["id"])
+#         markup.add(verify)
+#         msg = bot.reply_to(message, messages['welcome'],
+#                            parse_mode="html", disable_web_page_preview=True, reply_markup=markup)
+#         unverified.set(message.json["new_chat_member"]["id"], {
+#             "time": time.time(),
+#             "message": msg,
+#             "user": message.json["new_chat_member"],
+#         })
+#     except Exception as e:
+#         print(e)
 
 
-@bot.callback_query_handler(func=None)
-def welcome_callback(call: types.CallbackQuery):
-    try:
-        key = call.from_user.id
-        msg = unverified.get(key)["message"]
-        verified = bot.delete_message(msg.chat.id, msg.id)
-        if verified:
-            unverified.remove(key)
-    except Exception as e:
-        print(e)
-    bot.answer_callback_query(callback_query_id=call.id, show_alert=False)
+# @bot.callback_query_handler(func=None)
+# def welcome_callback(call: types.CallbackQuery):
+#     try:
+#         key = call.from_user.id
+#         msg = unverified.get(key)["message"]
+#         verified = bot.delete_message(msg.chat.id, msg.id)
+#         if verified:
+#             unverified.remove(key)
+#     except Exception as e:
+#         print(e)
+#     bot.answer_callback_query(callback_query_id=call.id, show_alert=False)
 
 
 # cron for minute wise checkup
-def remove_unverified():
-    while True:
-        now = time.time()
+# def remove_unverified():
+#     while True:
+#         now = time.time()
 
-        unverified.lock.acquire()
-        keys = list(unverified.mapp.keys())
-        unverified.lock.release()
-        for key in keys:
-            data = unverified.get(key)
-            # 1 min older
-            if data["time"] + 60 < now:
-                # unverfied user
-                # 1. delete message
-                msg = data["message"]
-                usr = data["user"]
-                try:
-                    bot.delete_message(msg.chat.id, msg.id)
-                except Exception as e:
-                    print(e)
-                # 2. send user is being removed
-                try:
-                    name = usr["first_name"]
-                    bot.send_message(
-                        msg.chat.id, f"Banning {name}: verification failed")
-                except Exception as e:
-                    print(e)
-                # 3. ban user
-                try:
-                    bot.ban_chat_member(msg.chat.id, usr["id"])
-                except Exception as e:
-                    bot.send_message(
-                        msg.chat.id, "Could not ban member: insufficient priviledges")
-                    print(e)
+#         unverified.lock.acquire()
+#         keys = list(unverified.mapp.keys())
+#         unverified.lock.release()
+#         for key in keys:
+#             data = unverified.get(key)
+#             # 1 min older
+#             if data["time"] + 60 < now:
+#                 # unverfied user
+#                 # 1. delete message
+#                 msg = data["message"]
+#                 usr = data["user"]
+#                 try:
+#                     bot.delete_message(msg.chat.id, msg.id)
+#                 except Exception as e:
+#                     print(e)
+#                 # 2. send user is being removed
+#                 try:
+#                     name = usr["first_name"]
+#                     bot.send_message(
+#                         msg.chat.id, f"Banning {name}: verification failed")
+#                 except Exception as e:
+#                     print(e)
+#                 # 3. ban user
+#                 try:
+#                     bot.ban_chat_member(msg.chat.id, usr["id"])
+#                 except Exception as e:
+#                     bot.send_message(
+#                         msg.chat.id, "Could not ban member: insufficient priviledges")
+#                     print(e)
 
-                # remove key regardless
-                unverified.remove(key)
+#                 # remove key regardless
+#                 unverified.remove(key)
 
-        time.sleep(60)
+#         time.sleep(60)
 
 
 @bot.message_handler(commands=["start", "hello"])
