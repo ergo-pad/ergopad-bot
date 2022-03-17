@@ -4,7 +4,7 @@ import dotenv
 import telebot
 import time
 import threading
-from telebot import types
+# from telebot import types
 
 dotenv.load_dotenv()
 
@@ -159,6 +159,7 @@ def greet(message):
     bot.reply_to(message, messages["hello"])
 
 
+# enforce 30 min cooldown for /price
 price_last_timestamps = {}
 
 
@@ -203,6 +204,7 @@ def socials(message):
         message.chat.id, messages["socials"], parse_mode="html", disable_web_page_preview=True)
 
 
+# DEBUG only
 def listener(messages):
     for m in messages:
         print(str(m))
@@ -212,6 +214,18 @@ def listener(messages):
 # t.start()
 
 # bot.set_update_listener(listener)
-bot.polling()
+def worker():
+    bot.polling()
 
 # t.join()
+
+
+# mocked event loop
+while True:
+    try:
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join()
+    except Exception as e:
+        print(e)
+        time.sleep(60)
