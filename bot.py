@@ -49,6 +49,7 @@ Welcome fellow bot 🥰 😍, I am not sure you belong here though... 👀 👀.
 # constants
 API = "https://ergopad.io/api"
 TELEGRAM_API_KEY = os.getenv('TELEGRAM_API_KEY')
+TOKEN_NAME = os.getenv('TOKEN_NAME')
 
 bot = telebot.TeleBot(TELEGRAM_API_KEY)
 
@@ -170,38 +171,38 @@ def price(message):
         # 30 min cooldown
         if message.chat.id in price_last_timestamps and price_last_timestamps[message.chat.id] + 1800 > time.time():
             return
-        res = requests.get(f"{API}/asset/price/ergopad", verify=False)
+        res = requests.get(f"{API}/asset/price/{TOKEN_NAME}", verify=False)
         price = round(res.json()["price"], 4)
         bot.send_message(
             message.chat.id, f"$ERGOPAD trading at ${price} USD")
         price_last_timestamps[message.chat.id] = time.time()
     except Exception as e:
         bot.send_message(
-            message.chat.id, "Sorry cannot get price data from ergopad api.")
+            message.chat.id, "Sorry cannot get price data from api.")
         print(e)
 
 
-@bot.message_handler(commands=["faq"])
-def faq(message):
-    bot.send_message(
-        message.chat.id, messages["faq"], parse_mode="html")
+# @bot.message_handler(commands=["faq"])
+# def faq(message):
+#     bot.send_message(
+#         message.chat.id, messages["faq"], parse_mode="html")
 
 
-@bot.message_handler(commands=["report"])
-def report(message):
-    bot.send_message(
-        message.chat.id, messages["report"], parse_mode="html")
+# @bot.message_handler(commands=["report"])
+# def report(message):
+#     bot.send_message(
+#         message.chat.id, messages["report"], parse_mode="html")
 
 
-@bot.message_handler(commands=["refund"])
-def refund(message):
-    bot.send_message(message.chat.id, messages["refund"])
+# @bot.message_handler(commands=["refund"])
+# def refund(message):
+#     bot.send_message(message.chat.id, messages["refund"])
 
 
-@bot.message_handler(commands=["socials"])
-def socials(message):
-    bot.send_message(
-        message.chat.id, messages["socials"], parse_mode="html", disable_web_page_preview=True)
+# @bot.message_handler(commands=["socials"])
+# def socials(message):
+#     bot.send_message(
+#         message.chat.id, messages["socials"], parse_mode="html", disable_web_page_preview=True)
 
 
 # DEBUG only
