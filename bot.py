@@ -174,7 +174,7 @@ def price(message):
         res = requests.get(f"{API}/asset/price/{TOKEN_NAME}", verify=False)
         price = round(res.json()["price"], 4)
         bot.send_message(
-            message.chat.id, f"$ERGOPAD trading at ${price} USD")
+            message.chat.id, f"${TOKEN_NAME.upper()} trading at ${price} USD")
         price_last_timestamps[message.chat.id] = time.time()
     except Exception as e:
         bot.send_message(
