@@ -41,6 +41,10 @@ Ergopad will release its own native token through an IDO and users will be able 
 → <a href="https://github.com/ergo-pad">Github</a>
 → <a href="https://discord.com/invite/E8cHp6ThuZ">Discord</a>    
 """,
+    "active_rounds": """
+Current Active Links 
+<b>Ergopad:</b>  
+""",
     "bot_love": """
 Welcome fellow bot 🥰 😍, I am not sure you belong here though... 👀 👀.
 """
@@ -204,6 +208,32 @@ def socials(message):
         message.chat.id, messages["socials"], parse_mode="html", disable_web_page_preview=True)
 
 
+@bot.message_handler(commands=["active_rounds"])
+def active_rounds(message):
+    message_resp = messages["active_rounds"]
+    try:
+        contribution = requests.get(f"{API}/contribution/events", verify=False).json()
+        whitelist = requests.get(f"{API}/whitelist/events", verify=False).json()
+        for event in contribution:
+            try:
+                if event["additionalDetails"]["add_to_footer"]:
+                    message_resp += f"""→ <a href="https://ergopad.io/contribute/{event["projectName"]}/{event["roundName"]}">{event["title"]}</a>\n"""
+            except:
+                pass
+        for event in whitelist:
+            try:
+                if event["additionalDetails"]["add_to_footer"]:
+                    message_resp += f"""→ <a href="https://ergopad.io/whitelist/{event["projectName"]}/{event["roundName"]}">{event["title"]}</a>\n"""
+            except:
+                pass
+        bot.send_message(
+            message.chat.id, message_resp, parse_mode="html", disable_web_page_preview=True)
+    except Exception as e:
+        bot.send_message(
+            message.chat.id, "Sorry cannot get active rounds data from ergopad api.")
+        print(e)
+
+
 # DEBUG only
 def listener(messages):
     for m in messages:
@@ -218,7 +248,6 @@ def worker():
     bot.polling()
 
 # t.join()
-
 
 # mocked event loop
 while True:
