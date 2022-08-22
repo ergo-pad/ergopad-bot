@@ -26,7 +26,7 @@ https://www.youtube.com/watch?v=OTcCNNCnS4Q
     "socials": """
 <b>Ergopad socials:</b>
 → <a href=\"https://ergopad.io\">Website</a>
-→ <a href=\"https://github.com/ergo-pad/ergopad/blob/dev/docs/README.md\">Whitepaper</a>
+→ <a href=\"https://ergopad.io/whitepaper\">Whitepaper</a>
 → <a href=\"https://twitter.com/ErgoPadOfficial\">Twitter</a>
 → <a href=\"https://github.com/ergo-pad\">Github</a>
 → <a href=\"https://discord.com/invite/E8cHp6ThuZ\">Discord</a>
@@ -47,7 +47,7 @@ Welcome fellow bot 🥰 😍, I am not sure you belong here though... 👀 👀.
 }
 
 # constants
-API = "https://ergopad.io/api"
+API = "https://api.ergopad.io"
 TELEGRAM_API_KEY = os.getenv('TELEGRAM_API_KEY')
 
 bot = telebot.TeleBot(TELEGRAM_API_KEY)
@@ -193,9 +193,9 @@ def report(message):
         message.chat.id, messages["report"], parse_mode="html")
 
 
-@bot.message_handler(commands=["refund"])
-def refund(message):
-    bot.send_message(message.chat.id, messages["refund"])
+# @bot.message_handler(commands=["refund"])
+# def refund(message):
+#     bot.send_message(message.chat.id, messages["refund"])
 
 
 @bot.message_handler(commands=["socials"])
